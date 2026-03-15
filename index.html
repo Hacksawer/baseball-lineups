@@ -27,7 +27,14 @@ h1,h2,h3{margin:0 0 10px 0}
 p{margin:6px 0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
-textarea,input{width:100%;font:inherit;padding:10px;border:1px solid #ccd4de;border-radius:10px;box-sizing:border-box}
+textarea,input{
+  width:100%;
+  font:inherit;
+  padding:10px;
+  border:1px solid #ccd4de;
+  border-radius:10px;
+  box-sizing:border-box;
+}
 textarea{min-height:120px}
 .section{margin-top:14px}
 .player{
@@ -53,6 +60,22 @@ button{font:inherit;padding:8px 12px;border:1px solid #cbd5e1;background:#f3f4f6
 body.game .editor-mode{display:none}
 body.game .game-mode{display:block}
 
+.game-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.game-header h1{
+  margin:0;
+  font-size:28px;
+  line-height:1.05;
+}
+.game-header button{
+  padding:6px 10px;
+}
+
 .game-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .game-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
 
@@ -62,39 +85,33 @@ body.game .game-mode{display:block}
   text-align:left;
   font:inherit;
   display:block;
-  padding:14px 16px; /* reduced from ~18px */
+  padding:14px 16px;
   margin:8px 0;
   background:#eef3ff;
   border:3px solid transparent;
   border-radius:14px;
 }
-
 .game-player.selected{
   background:var(--accent-soft);
   border-color:var(--accent);
 }
-
 .game-player .num{
   display:inline-block;
   min-width:44px;
   color:var(--muted);
   font-weight:700;
 }
-
 .game-player .name{
   font-size:22px;
   font-weight:700;
 }
-
 .game-bench{
   margin-top:16px;
   background:var(--bench);
   border-radius:14px;
   padding:12px;
 }
-
 .game-bench-list{display:flex;flex-wrap:wrap;gap:8px}
-
 .chip{
   background:#fff;
   border:1px solid #d7c98f;
@@ -102,7 +119,6 @@ body.game .game-mode{display:block}
   padding:8px 12px;
   font-size:15px;
 }
-
 @media (max-width:900px){
   .grid,.game-grid{grid-template-columns:1fr}
 }
@@ -112,12 +128,15 @@ body.game .game-mode{display:block}
 
 <div class="editor-mode">
 <h1>Baseball Lineup Tool</h1>
+<p class="muted">Edit team names, rosters, and lineups, then switch to Game Mode.</p>
 <button id="enterGameMode">Game Mode</button>
 
 <div class="grid">
 
 <div class="card">
 <h2>Left Team</h2>
+<input id="leftName" type="text" value="Left Team">
+<div style="height:8px"></div>
 <textarea id="leftText">12 Smith
 8 Martinez
 22 Lopez
@@ -138,6 +157,8 @@ body.game .game-mode{display:block}
 
 <div class="card">
 <h2>Right Team</h2>
+<input id="rightName" type="text" value="Right Team">
+<div style="height:8px"></div>
 <textarea id="rightText">3 Allen
 9 Carter
 14 Diaz
@@ -160,13 +181,15 @@ body.game .game-mode{display:block}
 </div>
 
 <div class="game-mode">
-<h1>Game Mode</h1>
-<button id="exitGameMode">Back</button>
+<div class="game-header">
+  <h1>Game Mode</h1>
+  <button id="exitGameMode">Edit</button>
+</div>
 
 <div class="game-grid">
 
 <div class="game-card">
-<h2>Left Team</h2>
+<h2 id="gameLeftTitle">Left Team</h2>
 <div id="gameLeftLineup"></div>
 <div class="game-bench">
 <h3>Bench</h3>
@@ -175,7 +198,7 @@ body.game .game-mode{display:block}
 </div>
 
 <div class="game-card">
-<h2>Right Team</h2>
+<h2 id="gameRightTitle">Right Team</h2>
 <div id="gameRightLineup"></div>
 <div class="game-bench">
 <h3>Bench</h3>
@@ -190,129 +213,173 @@ body.game .game-mode{display:block}
 (function(){
 
 function parse(text){
-return text.split(/\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
-let p=line.split(" ")
-return {num:p[0],name:p.slice(1).join(" ")}
-})
+  return text.split(/\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+    let p=line.split(" ");
+    return {num:p[0],name:p.slice(1).join(" ")};
+  });
 }
 
 let state={
-left:{lineup:[],bench:[],selected:null},
-right:{lineup:[],bench:[],selected:null}
-}
+  left:{name:"Left Team",lineup:[],bench:[],selected:null},
+  right:{name:"Right Team",lineup:[],bench:[],selected:null}
+};
 
 function renderSide(side){
-let lineup=document.getElementById(side+"Lineup")
-let bench=document.getElementById(side+"Bench")
-lineup.innerHTML=""
-bench.innerHTML=""
+  let lineup=document.getElementById(side+"Lineup");
+  let bench=document.getElementById(side+"Bench");
+  lineup.innerHTML="";
+  bench.innerHTML="";
 
-state[side].lineup.forEach((p,i)=>{
-let row=document.createElement("div")
-row.className="player"+(state[side].selected===i?" selected":"")
-row.innerHTML="<span>"+p.num+" "+p.name+"</span>"
+  state[side].lineup.forEach((p,i)=>{
+    let row=document.createElement("div");
+    row.className="player"+(state[side].selected===i?" selected":"");
+    row.innerHTML="<span>"+p.num+" "+p.name+"</span>";
 
-let c=document.createElement("div")
-c.className="controls"
+    let c=document.createElement("div");
+    c.className="controls";
 
-let up=document.createElement("button")
-up.className="small"
-up.textContent="↑"
-up.onclick=e=>{e.stopPropagation();if(i>0){[state[side].lineup[i-1],state[side].lineup[i]]=[state[side].lineup[i],state[side].lineup[i-1]];render()}}
+    let up=document.createElement("button");
+    up.className="small";
+    up.textContent="↑";
+    up.onclick=e=>{
+      e.stopPropagation();
+      if(i>0){
+        [state[side].lineup[i-1],state[side].lineup[i]]=[state[side].lineup[i],state[side].lineup[i-1]];
+        render();
+      }
+    };
 
-let down=document.createElement("button")
-down.className="small"
-down.textContent="↓"
-down.onclick=e=>{e.stopPropagation();if(i<state[side].lineup.length-1){[state[side].lineup[i+1],state[side].lineup[i]]=[state[side].lineup[i],state[side].lineup[i+1]];render()}}
+    let down=document.createElement("button");
+    down.className="small";
+    down.textContent="↓";
+    down.onclick=e=>{
+      e.stopPropagation();
+      if(i<state[side].lineup.length-1){
+        [state[side].lineup[i+1],state[side].lineup[i]]=[state[side].lineup[i],state[side].lineup[i+1]];
+        render();
+      }
+    };
 
-let benchBtn=document.createElement("button")
-benchBtn.className="small"
-benchBtn.textContent="Bench"
-benchBtn.onclick=e=>{e.stopPropagation();state[side].bench.push(state[side].lineup.splice(i,1)[0]);render()}
+    let benchBtn=document.createElement("button");
+    benchBtn.className="small";
+    benchBtn.textContent="Bench";
+    benchBtn.onclick=e=>{
+      e.stopPropagation();
+      state[side].bench.push(state[side].lineup.splice(i,1)[0]);
+      if(state[side].selected===i) state[side].selected=null;
+      render();
+    };
 
-c.appendChild(up);c.appendChild(down);c.appendChild(benchBtn)
-row.appendChild(c)
-row.onclick=()=>{state[side].selected=i;render()}
+    c.appendChild(up);
+    c.appendChild(down);
+    c.appendChild(benchBtn);
+    row.appendChild(c);
+    row.onclick=()=>{
+      state[side].selected=i;
+      render();
+    };
 
-lineup.appendChild(row)
-})
+    lineup.appendChild(row);
+  });
 
-state[side].bench.forEach((p,i)=>{
-let row=document.createElement("div")
-row.className="player"
-row.innerHTML="<span>"+p.num+" "+p.name+"</span>"
+  if(state[side].lineup.length===0){
+    lineup.innerHTML="<div class='muted'>No lineup players.</div>";
+  }
 
-let c=document.createElement("div")
-let play=document.createElement("button")
-play.className="small"
-play.textContent="Play"
-play.onclick=()=>{state[side].lineup.push(state[side].bench.splice(i,1)[0]);render()}
-c.appendChild(play)
-row.appendChild(c)
-bench.appendChild(row)
-})
+  state[side].bench.forEach((p,i)=>{
+    let row=document.createElement("div");
+    row.className="player";
+    row.innerHTML="<span>"+p.num+" "+p.name+"</span>";
+
+    let c=document.createElement("div");
+    let play=document.createElement("button");
+    play.className="small";
+    play.textContent="Play";
+    play.onclick=()=>{
+      state[side].lineup.push(state[side].bench.splice(i,1)[0]);
+      render();
+    };
+    c.appendChild(play);
+    row.appendChild(c);
+    bench.appendChild(row);
+  });
+
+  if(state[side].bench.length===0){
+    bench.innerHTML="<div class='muted'>No bench players.</div>";
+  }
 }
 
 function renderGame(){
-let gl=document.getElementById("gameLeftLineup")
-let gr=document.getElementById("gameRightLineup")
-let bl=document.getElementById("gameLeftBench")
-let br=document.getElementById("gameRightBench")
-gl.innerHTML="";gr.innerHTML="";bl.innerHTML="";br.innerHTML=""
+  document.getElementById("gameLeftTitle").textContent=state.left.name;
+  document.getElementById("gameRightTitle").textContent=state.right.name;
 
-state.left.lineup.forEach((p,i)=>{
-let btn=document.createElement("button")
-btn.className="game-player"+(state.left.selected===i?" selected":"")
-btn.innerHTML="<span class='num'>"+p.num+"</span> <span class='name'>"+p.name+"</span>"
-btn.onclick=()=>{state.left.selected=i;render()}
-gl.appendChild(btn)
-})
+  let gl=document.getElementById("gameLeftLineup");
+  let gr=document.getElementById("gameRightLineup");
+  let bl=document.getElementById("gameLeftBench");
+  let br=document.getElementById("gameRightBench");
+  gl.innerHTML=""; gr.innerHTML=""; bl.innerHTML=""; br.innerHTML="";
 
-state.right.lineup.forEach((p,i)=>{
-let btn=document.createElement("button")
-btn.className="game-player"+(state.right.selected===i?" selected":"")
-btn.innerHTML="<span class='num'>"+p.num+"</span> <span class='name'>"+p.name+"</span>"
-btn.onclick=()=>{state.right.selected=i;render()}
-gr.appendChild(btn)
-})
+  state.left.lineup.forEach((p,i)=>{
+    let btn=document.createElement("button");
+    btn.className="game-player"+(state.left.selected===i?" selected":"");
+    btn.innerHTML="<span class='num'>"+p.num+"</span> <span class='name'>"+p.name+"</span>";
+    btn.onclick=()=>{state.left.selected=i; render();};
+    gl.appendChild(btn);
+  });
 
-state.left.bench.forEach(p=>{
-let chip=document.createElement("div")
-chip.className="chip"
-chip.textContent=p.num+" "+p.name
-bl.appendChild(chip)
-})
+  state.right.lineup.forEach((p,i)=>{
+    let btn=document.createElement("button");
+    btn.className="game-player"+(state.right.selected===i?" selected":"");
+    btn.innerHTML="<span class='num'>"+p.num+"</span> <span class='name'>"+p.name+"</span>";
+    btn.onclick=()=>{state.right.selected=i; render();};
+    gr.appendChild(btn);
+  });
 
-state.right.bench.forEach(p=>{
-let chip=document.createElement("div")
-chip.className="chip"
-chip.textContent=p.num+" "+p.name
-br.appendChild(chip)
-})
+  state.left.bench.forEach(p=>{
+    let chip=document.createElement("div");
+    chip.className="chip";
+    chip.textContent=p.num+" "+p.name;
+    bl.appendChild(chip);
+  });
+
+  state.right.bench.forEach(p=>{
+    let chip=document.createElement("div");
+    chip.className="chip";
+    chip.textContent=p.num+" "+p.name;
+    br.appendChild(chip);
+  });
+
+  if(state.left.bench.length===0){ bl.innerHTML="<div class='muted'>No bench players.</div>"; }
+  if(state.right.bench.length===0){ br.innerHTML="<div class='muted'>No bench players.</div>"; }
 }
 
 function render(){
-renderSide("left")
-renderSide("right")
-renderGame()
+  state.left.name=document.getElementById("leftName").value.trim() || "Left Team";
+  state.right.name=document.getElementById("rightName").value.trim() || "Right Team";
+  renderSide("left");
+  renderSide("right");
+  renderGame();
 }
 
 function loadSide(side){
-let text=document.getElementById(side+"Text").value
-state[side].lineup=parse(text)
-state[side].bench=[]
-state[side].selected=null
-render()
+  let text=document.getElementById(side+"Text").value;
+  state[side].lineup=parse(text);
+  state[side].bench=[];
+  state[side].selected=null;
+  state[side].name=document.getElementById(side+"Name").value.trim() || (side==="left"?"Left Team":"Right Team");
+  render();
 }
 
-document.getElementById("leftLoad").onclick=()=>loadSide("left")
-document.getElementById("rightLoad").onclick=()=>loadSide("right")
+document.getElementById("leftLoad").onclick=()=>loadSide("left");
+document.getElementById("rightLoad").onclick=()=>loadSide("right");
+document.getElementById("leftName").addEventListener("input",render);
+document.getElementById("rightName").addEventListener("input",render);
 
-document.getElementById("enterGameMode").onclick=()=>document.body.classList.add("game")
-document.getElementById("exitGameMode").onclick=()=>document.body.classList.remove("game")
+document.getElementById("enterGameMode").onclick=()=>document.body.classList.add("game");
+document.getElementById("exitGameMode").onclick=()=>document.body.classList.remove("game");
 
-loadSide("left")
-loadSide("right")
+loadSide("left");
+loadSide("right");
 
 })();
 </script>
