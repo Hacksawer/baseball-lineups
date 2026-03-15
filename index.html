@@ -3,105 +3,268 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseball Lineup Local</title>
+<title>Baseball Lineup Game Mode</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:#f4f6f8;color:#13202b}
+:root{
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --line:#d8dde6;
+  --text:#13202b;
+  --muted:#5c6b7a;
+  --accent:#1f6feb;
+  --accent-soft:#dbeafe;
+  --bench:#fff7db;
+}
+*{box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  margin:0;
+  padding:16px;
+  background:var(--bg);
+  color:var(--text);
+}
 h1,h2,h3{margin:0 0 10px 0}
 p{margin:6px 0}
-.notice{background:#fff3cd;border:1px solid #f0d98a;border-radius:10px;padding:12px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.card{background:#fff;border:1px solid #d8dde6;border-radius:14px;padding:14px}
-textarea,input{width:100%;font:inherit;padding:10px;border:1px solid #ccd4de;border-radius:10px;box-sizing:border-box}
+.header{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  margin-bottom:16px;
+}
+.header-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+}
+textarea,input{
+  width:100%;
+  font:inherit;
+  padding:10px;
+  border:1px solid #ccd4de;
+  border-radius:10px;
+  box-sizing:border-box;
+}
 textarea{min-height:120px}
 .section{margin-top:14px}
-.player{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;margin:8px 0;background:#eef3ff;border:2px solid transparent;border-radius:10px}
-.player.selected{background:#dbeafe;border-color:#1f6feb}
+.player{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  margin:8px 0;
+  background:#eef3ff;
+  border:2px solid transparent;
+  border-radius:10px;
+}
+.player.selected{
+  background:var(--accent-soft);
+  border-color:var(--accent);
+}
 .controls{display:flex;gap:6px;flex-wrap:wrap}
-button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6;border-radius:8px}
+button{
+  font:inherit;
+  padding:8px 12px;
+  border:1px solid #cbd5e1;
+  background:#f3f4f6;
+  border-radius:8px;
+}
 .small{font-size:14px;padding:5px 8px}
-.muted{color:#5c6b7a}
-@media (max-width: 900px){.grid{grid-template-columns:1fr}}
+.muted{color:var(--muted)}
+.bench{
+  background:var(--bench);
+  border-radius:10px;
+  padding:8px;
+}
+.game-mode{
+  display:none;
+}
+body.game .editor-mode{
+  display:none;
+}
+body.game .game-mode{
+  display:block;
+}
+.game-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:16px;
+}
+.game-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.game-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+}
+.game-player{
+  width:100%;
+  text-align:left;
+  font:inherit;
+  display:block;
+  padding:18px 16px;
+  margin:10px 0;
+  background:#eef3ff;
+  border:3px solid transparent;
+  border-radius:14px;
+}
+.game-player.selected{
+  background:var(--accent-soft);
+  border-color:var(--accent);
+}
+.game-player .num{
+  display:inline-block;
+  min-width:48px;
+  color:var(--muted);
+  font-weight:700;
+}
+.game-player .name{
+  font-size:22px;
+  font-weight:700;
+}
+.game-bench{
+  margin-top:16px;
+  background:var(--bench);
+  border-radius:14px;
+  padding:12px;
+}
+.game-bench-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.chip{
+  background:#fff;
+  border:1px solid #d7c98f;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:15px;
+}
+@media (max-width: 900px){
+  .grid,.game-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<h1>Baseball Lineup Tool</h1>
+<div class="editor-mode">
+  <div class="header">
+    <div>
+      <h1>Baseball Lineup Tool</h1>
+      <p class="muted">Tap one player in each lineup to highlight. Use the buttons to move players up, down, to Bench, or back to Lineup.</p>
+    </div>
+    <div class="header-actions">
+      <button id="enterGameMode">Game Mode</button>
+      <button id="resetData">Reset</button>
+    </div>
+  </div>
 
-<div id="jsNotice" class="notice">
-  <strong>Status:</strong> Page loaded. If you still see this yellow box after a second, JavaScript did not run and the file is opening in a previewer instead of a browser.
-</div>
-
-<div class="grid">
-  <div class="card">
-    <h2>Left Team</h2>
-    <p class="muted">One player per line, like: 12 Smith</p>
-    <input id="leftTitle" value="Home Team">
-    <div style="height:8px"></div>
-    <textarea id="leftText">12 Smith
+  <div class="grid">
+    <div class="card">
+      <h2>Left Team</h2>
+      <p class="muted">One player per line, like: 12 Smith</p>
+      <input id="leftTitle" value="Home Team">
+      <div style="height:8px"></div>
+      <textarea id="leftText">12 Smith
 8 Martinez
 22 Lopez
 4 Johnson
 17 Perez</textarea>
-    <div style="height:10px"></div>
-    <button id="leftLoad">Load Left Team</button>
+      <div style="height:10px"></div>
+      <button id="leftLoad">Load Left Team</button>
 
-    <div class="section">
-      <h3>Lineup</h3>
-      <div id="leftLineup">
-        <div class="player"><span>12 Smith</span></div>
-        <div class="player"><span>8 Martinez</span></div>
-        <div class="player"><span>22 Lopez</span></div>
-        <div class="player"><span>4 Johnson</span></div>
-        <div class="player"><span>17 Perez</span></div>
+      <div class="section">
+        <h3>Lineup</h3>
+        <div id="leftLineup"></div>
+      </div>
+
+      <div class="section">
+        <h3>Bench</h3>
+        <div id="leftBench" class="bench"></div>
       </div>
     </div>
 
-    <div class="section">
-      <h3>Bench</h3>
-      <div id="leftBench"><div class="muted">No bench players yet.</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Right Team</h2>
-    <p class="muted">One player per line, like: 3 Allen</p>
-    <input id="rightTitle" value="Visitors">
-    <div style="height:8px"></div>
-    <textarea id="rightText">3 Allen
+    <div class="card">
+      <h2>Right Team</h2>
+      <p class="muted">One player per line, like: 3 Allen</p>
+      <input id="rightTitle" value="Visitors">
+      <div style="height:8px"></div>
+      <textarea id="rightText">3 Allen
 9 Carter
 14 Diaz
 27 Foster
 31 Green</textarea>
-    <div style="height:10px"></div>
-    <button id="rightLoad">Load Right Team</button>
+      <div style="height:10px"></div>
+      <button id="rightLoad">Load Right Team</button>
 
-    <div class="section">
-      <h3>Lineup</h3>
-      <div id="rightLineup">
-        <div class="player"><span>3 Allen</span></div>
-        <div class="player"><span>9 Carter</span></div>
-        <div class="player"><span>14 Diaz</span></div>
-        <div class="player"><span>27 Foster</span></div>
-        <div class="player"><span>31 Green</span></div>
+      <div class="section">
+        <h3>Lineup</h3>
+        <div id="rightLineup"></div>
+      </div>
+
+      <div class="section">
+        <h3>Bench</h3>
+        <div id="rightBench" class="bench"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="game-mode">
+  <div class="game-header">
+    <div>
+      <h1>Game Mode</h1>
+      <p class="muted">Large tap targets for quick in-game use.</p>
+    </div>
+    <button id="exitGameMode">Back to Edit</button>
+  </div>
+
+  <div class="game-grid">
+    <div class="game-card">
+      <h2 id="gameLeftTitle">Home Team</h2>
+      <div id="gameLeftLineup"></div>
+      <div class="game-bench">
+        <h3>Bench</h3>
+        <div id="gameLeftBench" class="game-bench-list"></div>
       </div>
     </div>
 
-    <div class="section">
-      <h3>Bench</h3>
-      <div id="rightBench"><div class="muted">No bench players yet.</div></div>
+    <div class="game-card">
+      <h2 id="gameRightTitle">Visitors</h2>
+      <div id="gameRightLineup"></div>
+      <div class="game-bench">
+        <h3>Bench</h3>
+        <div id="gameRightBench" class="game-bench-list"></div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 (function () {
-  var notice = document.getElementById('jsNotice');
-  notice.innerHTML = '<strong>Status:</strong> JavaScript is running. This file is open in a real browser.';
-  notice.style.background = '#d1fae5';
-  notice.style.borderColor = '#86efac';
+  var STORAGE_KEY = 'baseball-lineup-game-mode-v1';
 
   var state = {
-    left: { lineup: [], bench: [], selected: null },
-    right: { lineup: [], bench: [], selected: null }
+    left: { lineup: [], bench: [], selected: null, title: 'Home Team', raw: '' },
+    right: { lineup: [], bench: [], selected: null, title: 'Visitors', raw: '' }
   };
 
   function parse(text) {
@@ -116,7 +279,69 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
     return player.num + ' ' + player.name;
   }
 
-  function renderSide(side) {
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function loadSaved() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      var saved = JSON.parse(raw);
+      if (saved.left) state.left = saved.left;
+      if (saved.right) state.right = saved.right;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function resetToDefaults() {
+    state.left = {
+      lineup: parse("12 Smith\n8 Martinez\n22 Lopez\n4 Johnson\n17 Perez"),
+      bench: [],
+      selected: null,
+      title: 'Home Team',
+      raw: "12 Smith\n8 Martinez\n22 Lopez\n4 Johnson\n17 Perez"
+    };
+    state.right = {
+      lineup: parse("3 Allen\n9 Carter\n14 Diaz\n27 Foster\n31 Green"),
+      bench: [],
+      selected: null,
+      title: 'Visitors',
+      raw: "3 Allen\n9 Carter\n14 Diaz\n27 Foster\n31 Green"
+    };
+  }
+
+  function syncInputsFromState() {
+    document.getElementById('leftTitle').value = state.left.title || '';
+    document.getElementById('rightTitle').value = state.right.title || '';
+    document.getElementById('leftText').value = state.left.raw || state.left.lineup.concat(state.left.bench).map(textOf).join('\n');
+    document.getElementById('rightText').value = state.right.raw || state.right.lineup.concat(state.right.bench).map(textOf).join('\n');
+  }
+
+  function loadSide(side) {
+    var textEl = document.getElementById(side + 'Text');
+    var titleEl = document.getElementById(side + 'Title');
+    state[side].lineup = parse(textEl.value);
+    state[side].bench = [];
+    state[side].selected = null;
+    state[side].title = titleEl.value.trim() || (side === 'left' ? 'Home Team' : 'Visitors');
+    state[side].raw = textEl.value;
+    render();
+  }
+
+  function makeButton(label, handler) {
+    var btn = document.createElement('button');
+    btn.className = 'small';
+    btn.textContent = label;
+    btn.onclick = handler;
+    return btn;
+  }
+
+  function renderEditorSide(side) {
     var lineupEl = document.getElementById(side + 'Lineup');
     var benchEl = document.getElementById(side + 'Bench');
     lineupEl.innerHTML = '';
@@ -136,10 +361,7 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
         var controls = document.createElement('div');
         controls.className = 'controls';
 
-        var up = document.createElement('button');
-        up.className = 'small';
-        up.textContent = '↑';
-        up.onclick = function (e) {
+        controls.appendChild(makeButton('↑', function (e) {
           e.stopPropagation();
           if (i > 0) {
             var tmp = state[side].lineup[i - 1];
@@ -147,15 +369,11 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
             state[side].lineup[i] = tmp;
             if (state[side].selected === i) state[side].selected = i - 1;
             else if (state[side].selected === i - 1) state[side].selected = i;
-            renderSide(side);
+            render();
           }
-        };
-        controls.appendChild(up);
+        }));
 
-        var down = document.createElement('button');
-        down.className = 'small';
-        down.textContent = '↓';
-        down.onclick = function (e) {
+        controls.appendChild(makeButton('↓', function (e) {
           e.stopPropagation();
           if (i < state[side].lineup.length - 1) {
             var tmp = state[side].lineup[i + 1];
@@ -163,26 +381,21 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
             state[side].lineup[i] = tmp;
             if (state[side].selected === i) state[side].selected = i + 1;
             else if (state[side].selected === i + 1) state[side].selected = i;
-            renderSide(side);
+            render();
           }
-        };
-        controls.appendChild(down);
+        }));
 
-        var bench = document.createElement('button');
-        bench.className = 'small';
-        bench.textContent = 'Bench';
-        bench.onclick = function (e) {
+        controls.appendChild(makeButton('Bench', function (e) {
           e.stopPropagation();
           var moved = state[side].lineup.splice(i, 1)[0];
           state[side].bench.push(moved);
           if (state[side].selected === i) state[side].selected = null;
-          renderSide(side);
-        };
-        controls.appendChild(bench);
+          render();
+        }));
 
         row.onclick = function () {
           state[side].selected = i;
-          renderSide(side);
+          render();
         };
 
         row.appendChild(controls);
@@ -204,15 +417,11 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
         var controls = document.createElement('div');
         controls.className = 'controls';
 
-        var play = document.createElement('button');
-        play.className = 'small';
-        play.textContent = 'Play';
-        play.onclick = function () {
+        controls.appendChild(makeButton('Play', function () {
           var moved = state[side].bench.splice(i, 1)[0];
           state[side].lineup.push(moved);
-          renderSide(side);
-        };
-        controls.appendChild(play);
+          render();
+        }));
 
         row.appendChild(controls);
         benchEl.appendChild(row);
@@ -220,19 +429,71 @@ button{font:inherit;padding:6px 10px;border:1px solid #cbd5e1;background:#f3f4f6
     }
   }
 
-  function loadSide(side) {
-    var text = document.getElementById(side + 'Text').value;
-    state[side].lineup = parse(text);
-    state[side].bench = [];
-    state[side].selected = null;
-    renderSide(side);
+  function renderGameSide(side) {
+    document.getElementById('game' + capitalize(side) + 'Title').textContent = state[side].title || '';
+    var lineupEl = document.getElementById('game' + capitalize(side) + 'Lineup');
+    var benchEl = document.getElementById('game' + capitalize(side) + 'Bench');
+    lineupEl.innerHTML = '';
+    benchEl.innerHTML = '';
+
+    state[side].lineup.forEach(function (player, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'game-player' + (state[side].selected === i ? ' selected' : '');
+      btn.innerHTML = '<span class="num">' + player.num + '</span><span class="name">' + player.name + '</span>';
+      btn.onclick = function () {
+        state[side].selected = i;
+        render();
+      };
+      lineupEl.appendChild(btn);
+    });
+
+    if (state[side].bench.length === 0) {
+      benchEl.innerHTML = '<div class="muted">No bench players.</div>';
+    } else {
+      state[side].bench.forEach(function (player) {
+        var chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = textOf(player);
+        benchEl.appendChild(chip);
+      });
+    }
+  }
+
+  function capitalize(x) {
+    return x.charAt(0).toUpperCase() + x.slice(1);
+  }
+
+  function render() {
+    state.left.title = document.getElementById('leftTitle').value.trim() || 'Home Team';
+    state.right.title = document.getElementById('rightTitle').value.trim() || 'Visitors';
+    state.left.raw = document.getElementById('leftText').value;
+    state.right.raw = document.getElementById('rightText').value;
+
+    renderEditorSide('left');
+    renderEditorSide('right');
+    renderGameSide('left');
+    renderGameSide('right');
+    save();
   }
 
   document.getElementById('leftLoad').onclick = function () { loadSide('left'); };
   document.getElementById('rightLoad').onclick = function () { loadSide('right'); };
+  document.getElementById('enterGameMode').onclick = function () { document.body.classList.add('game'); };
+  document.getElementById('exitGameMode').onclick = function () { document.body.classList.remove('game'); };
+  document.getElementById('resetData').onclick = function () {
+    localStorage.removeItem(STORAGE_KEY);
+    resetToDefaults();
+    syncInputsFromState();
+    render();
+  };
 
-  loadSide('left');
-  loadSide('right');
+  document.getElementById('leftTitle').addEventListener('input', render);
+  document.getElementById('rightTitle').addEventListener('input', render);
+
+  if (!loadSaved()) resetToDefaults();
+  syncInputsFromState();
+  render();
 })();
 </script>
 </body>
