@@ -24,9 +24,10 @@ body{
   color:var(--text);
 }
 h1,h2,h3{margin:0 0 10px 0}
-p{margin:6px 0}
+
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+
 textarea,input{
   width:100%;
   font:inherit;
@@ -36,7 +37,9 @@ textarea,input{
   box-sizing:border-box;
 }
 textarea{min-height:120px}
+
 .section{margin-top:14px}
+
 .player{
   display:flex;
   justify-content:space-between;
@@ -48,14 +51,34 @@ textarea{min-height:120px}
   border:2px solid transparent;
   border-radius:10px;
 }
-.player.selected{background:var(--accent-soft);border-color:var(--accent)}
+
+.player.selected{
+  background:var(--accent-soft);
+  border-color:var(--accent);
+}
+
 .controls{display:flex;gap:6px;flex-wrap:wrap}
-button{font:inherit;padding:8px 12px;border:1px solid #cbd5e1;background:#f3f4f6;border-radius:8px}
+
+button{
+  font:inherit;
+  padding:8px 12px;
+  border:1px solid #cbd5e1;
+  background:#f3f4f6;
+  border-radius:8px;
+}
+
 .small{font-size:14px;padding:5px 8px}
+
 .muted{color:var(--muted)}
-.bench{background:var(--bench);border-radius:10px;padding:8px}
+
+.bench{
+  background:var(--bench);
+  border-radius:10px;
+  padding:8px;
+}
 
 /* Game Mode */
+
 .game-mode{display:none}
 body.game .editor-mode{display:none}
 body.game .game-mode{display:block}
@@ -67,19 +90,38 @@ body.game .game-mode{display:block}
   gap:10px;
   margin-bottom:10px;
 }
+
 .game-header h1{
   margin:0;
   font-size:28px;
   line-height:1.05;
 }
+
 .game-header button{
   padding:6px 10px;
 }
 
-.game-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.game-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+.game-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
 
-/* 25% shorter player bubbles */
+.game-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+}
+
+/* CENTER TEAM NAMES */
+.game-card h2{
+  text-align:center;
+  margin-bottom:12px;
+}
+
+/* Player bubbles */
+
 .game-player{
   width:100%;
   text-align:left;
@@ -91,27 +133,37 @@ body.game .game-mode{display:block}
   border:3px solid transparent;
   border-radius:14px;
 }
+
 .game-player.selected{
   background:var(--accent-soft);
   border-color:var(--accent);
 }
+
 .game-player .num{
   display:inline-block;
   min-width:44px;
   color:var(--muted);
   font-weight:700;
 }
+
 .game-player .name{
   font-size:22px;
   font-weight:700;
 }
+
 .game-bench{
   margin-top:16px;
   background:var(--bench);
   border-radius:14px;
   padding:12px;
 }
-.game-bench-list{display:flex;flex-wrap:wrap;gap:8px}
+
+.game-bench-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
 .chip{
   background:#fff;
   border:1px solid #d7c98f;
@@ -119,6 +171,7 @@ body.game .game-mode{display:block}
   padding:8px 12px;
   font-size:15px;
 }
+
 @media (max-width:900px){
   .grid,.game-grid{grid-template-columns:1fr}
 }
@@ -182,8 +235,8 @@ body.game .game-mode{display:block}
 
 <div class="game-mode">
 <div class="game-header">
-  <h1>Game Mode</h1>
-  <button id="exitGameMode">Edit</button>
+<h1>Game Mode</h1>
+<button id="exitGameMode">Edit</button>
 </div>
 
 <div class="game-grid">
@@ -274,6 +327,7 @@ function renderSide(side){
     c.appendChild(down);
     c.appendChild(benchBtn);
     row.appendChild(c);
+
     row.onclick=()=>{
       state[side].selected=i;
       render();
@@ -292,6 +346,7 @@ function renderSide(side){
     row.innerHTML="<span>"+p.num+" "+p.name+"</span>";
 
     let c=document.createElement("div");
+
     let play=document.createElement("button");
     play.className="small";
     play.textContent="Play";
@@ -299,6 +354,7 @@ function renderSide(side){
       state[side].lineup.push(state[side].bench.splice(i,1)[0]);
       render();
     };
+
     c.appendChild(play);
     row.appendChild(c);
     bench.appendChild(row);
@@ -317,7 +373,11 @@ function renderGame(){
   let gr=document.getElementById("gameRightLineup");
   let bl=document.getElementById("gameLeftBench");
   let br=document.getElementById("gameRightBench");
-  gl.innerHTML=""; gr.innerHTML=""; bl.innerHTML=""; br.innerHTML="";
+
+  gl.innerHTML="";
+  gr.innerHTML="";
+  bl.innerHTML="";
+  br.innerHTML="";
 
   state.left.lineup.forEach((p,i)=>{
     let btn=document.createElement("button");
@@ -372,6 +432,7 @@ function loadSide(side){
 
 document.getElementById("leftLoad").onclick=()=>loadSide("left");
 document.getElementById("rightLoad").onclick=()=>loadSide("right");
+
 document.getElementById("leftName").addEventListener("input",render);
 document.getElementById("rightName").addEventListener("input",render);
 
