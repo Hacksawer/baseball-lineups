@@ -7,7 +7,7 @@
 <style>
 :root{
   --bg:#f4f6f8; --card:#ffffff; --line:#d8dde6; --text:#13202b; --muted:#5c6b7a;
-  --accent:#1f6feb; --accent-soft:#dbeafe; --bench:#fff7db;
+  --accent:#1f6feb; --accent-soft:#dbeafe; --bench:#fff7db; --sub:#e8f5e9; --sub-line:#9fd3a8;
 }
 *{box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:var(--bg);color:var(--text)}
@@ -24,6 +24,11 @@ button{font:inherit;padding:8px 12px;border:1px solid #cbd5e1;background:#f3f4f6
 .small{font-size:14px;padding:5px 8px}
 .muted{color:var(--muted)}
 .bench{background:var(--bench);border-radius:10px;padding:8px}
+.inline-row{display:flex;gap:8px;align-items:center}
+.inline-name{flex:1;min-width:0}
+.name-input,.num-input{font:inherit;border:1px solid #ccd4de;border-radius:8px;padding:6px 8px;background:#fff}
+.num-input{width:60px}
+.name-input{flex:1;min-width:0}
 .game-mode{display:none}
 body.game .editor-mode{display:none}
 body.game .game-mode{display:block}
@@ -32,7 +37,9 @@ body.game .game-mode{display:block}
 .game-header button{padding:6px 10px}
 .game-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .game-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
-.game-card h2{text-align:center;margin-bottom:12px}
+.game-team-header{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:12px}
+.game-team-header h2{text-align:center;margin:0}
+.sub-btn{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 .game-player{width:100%;text-align:left;font:inherit;display:block;padding:14px 16px;margin:8px 0;background:#eef3ff;border:3px solid transparent;border-radius:14px}
 .game-player.selected{background:var(--accent-soft);border-color:var(--accent)}
 .game-player .num{display:inline-block;min-width:44px;color:var(--muted);font-weight:700}
@@ -40,6 +47,8 @@ body.game .game-mode{display:block}
 .game-bench{margin-top:16px;background:var(--bench);border-radius:14px;padding:12px}
 .game-bench-list{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:#fff;border:1px solid #d7c98f;border-radius:999px;padding:8px 12px;font-size:15px}
+.sub-panel{margin-top:12px;background:var(--sub);border:1px solid var(--sub-line);border-radius:12px;padding:10px}
+.sub-option{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff;border:1px solid #cde8d1;border-radius:10px;padding:8px 10px;margin-top:8px}
 @media (max-width:900px){.grid,.game-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -47,38 +56,15 @@ body.game .game-mode{display:block}
 
 <div class="editor-mode">
 <h1>Baseball Lineup Tool</h1>
-<p class="muted">Edit team names, rosters, and lineups, then switch to Game Mode.</p>
+<p class="muted">Edit team names, rosters, player names, and lineups, then switch to Game Mode.</p>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
   <button id="enterGameMode">Game Mode</button>
-  <button id="resetSavedData">Reset Saved Data</button>
 </div>
 
 <div class="grid">
   <div class="card">
-    <h2>Left Team</h2>
-    <input id="leftName" type="text" value="Left Team">
-    <div style="height:8px"></div>
-    <textarea id="leftText">12 Smith
-8 Martinez
-22 Lopez
-4 Johnson
-17 Perez</textarea>
-    <button id="leftLoad">Load</button>
-
-    <div class="section">
-      <h3>Lineup</h3>
-      <div id="leftLineup"></div>
-    </div>
-
-    <div class="section">
-      <h3>Bench</h3>
-      <div id="leftBench" class="bench"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Right Team</h2>
-    <input id="rightName" type="text" value="Right Team">
+    <h2>Guest Team</h2>
+    <input id="rightName" type="text" value="Guest Team">
     <div style="height:8px"></div>
     <textarea id="rightText">3 Allen
 9 Carter
@@ -97,6 +83,28 @@ body.game .game-mode{display:block}
       <div id="rightBench" class="bench"></div>
     </div>
   </div>
+
+  <div class="card">
+    <h2>Home Team</h2>
+    <input id="leftName" type="text" value="Home Team">
+    <div style="height:8px"></div>
+    <textarea id="leftText">12 Smith
+8 Martinez
+22 Lopez
+4 Johnson
+17 Perez</textarea>
+    <button id="leftLoad">Load</button>
+
+    <div class="section">
+      <h3>Lineup</h3>
+      <div id="leftLineup"></div>
+    </div>
+
+    <div class="section">
+      <h3>Bench</h3>
+      <div id="leftBench" class="bench"></div>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -108,20 +116,28 @@ body.game .game-mode{display:block}
 
   <div class="game-grid">
     <div class="game-card">
-      <h2 id="gameLeftTitle">Left Team</h2>
-      <div id="gameLeftLineup"></div>
+      <div class="game-team-header">
+        <h2 id="gameRightTitle">Guest Team</h2>
+        <button id="subRightBtn" class="sub-btn small">Sub</button>
+      </div>
+      <div id="gameRightLineup"></div>
+      <div id="subRightPanel"></div>
       <div class="game-bench">
         <h3>Bench</h3>
-        <div id="gameLeftBench" class="game-bench-list"></div>
+        <div id="gameRightBench" class="game-bench-list"></div>
       </div>
     </div>
 
     <div class="game-card">
-      <h2 id="gameRightTitle">Right Team</h2>
-      <div id="gameRightLineup"></div>
+      <div class="game-team-header">
+        <h2 id="gameLeftTitle">Home Team</h2>
+        <button id="subLeftBtn" class="sub-btn small">Sub</button>
+      </div>
+      <div id="gameLeftLineup"></div>
+      <div id="subLeftPanel"></div>
       <div class="game-bench">
         <h3>Bench</h3>
-        <div id="gameRightBench" class="game-bench-list"></div>
+        <div id="gameLeftBench" class="game-bench-list"></div>
       </div>
     </div>
   </div>
@@ -129,27 +145,29 @@ body.game .game-mode{display:block}
 
 <script>
 (function(){
-const STORAGE_KEY = "baseball_lineup_game_mode_v5_state";
+const STORAGE_KEY = "baseball_lineup_game_mode_v6_state";
 
 function parse(text){
   return text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean).map(function(line){
     var p=line.split(" ");
-    return {num:p[0],name:p.slice(1).join(" ")};
+    return {num:p[0] || "",name:p.slice(1).join(" ") || ""};
   });
 }
 
+function textOf(p){ return (p.num + " " + p.name).trim(); }
+
 function defaultState(){
   return {
-    left:{name:"Left Team",raw:"12 Smith\n8 Martinez\n22 Lopez\n4 Johnson\n17 Perez",lineup:[],bench:[],selected:null},
-    right:{name:"Right Team",raw:"3 Allen\n9 Carter\n14 Diaz\n27 Foster\n31 Green",lineup:[],bench:[],selected:null}
+    left:{name:"Home Team",raw:"12 Smith\n8 Martinez\n22 Lopez\n4 Johnson\n17 Perez",lineup:[],bench:[],selected:null,subOpen:false},
+    right:{name:"Guest Team",raw:"3 Allen\n9 Carter\n14 Diaz\n27 Foster\n31 Green",lineup:[],bench:[],selected:null,subOpen:false}
   };
 }
 
 let state = defaultState();
 
 function saveState(){
-  state.left.name = document.getElementById("leftName").value.trim() || "Left Team";
-  state.right.name = document.getElementById("rightName").value.trim() || "Right Team";
+  state.left.name = document.getElementById("leftName").value.trim() || "Home Team";
+  state.right.name = document.getElementById("rightName").value.trim() || "Guest Team";
   state.left.raw = document.getElementById("leftText").value;
   state.right.raw = document.getElementById("rightText").value;
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
@@ -160,17 +178,19 @@ function loadSavedState(){
     var raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return false;
     var saved = JSON.parse(raw);
-    if(saved && saved.left && saved.right){
-      state = saved;
-      return true;
-    }
+    if(saved && saved.left && saved.right){ state = saved; return true; }
   }catch(e){}
   return false;
 }
 
+function rebuildRaw(side){
+  state[side].raw = state[side].lineup.concat(state[side].bench).map(textOf).join("\n");
+  document.getElementById(side + "Text").value = state[side].raw;
+}
+
 function applyStateToInputs(){
-  document.getElementById("leftName").value = state.left.name || "Left Team";
-  document.getElementById("rightName").value = state.right.name || "Right Team";
+  document.getElementById("leftName").value = state.left.name || "Home Team";
+  document.getElementById("rightName").value = state.right.name || "Guest Team";
   document.getElementById("leftText").value = state.left.raw || "";
   document.getElementById("rightText").value = state.right.raw || "";
 }
@@ -184,7 +204,33 @@ function renderSide(side){
   state[side].lineup.forEach(function(p,i){
     var row=document.createElement("div");
     row.className="player"+(state[side].selected===i?" selected":"");
-    row.innerHTML="<span>"+p.num+" "+p.name+"</span>";
+
+    var inline=document.createElement("div");
+    inline.className="inline-row inline-name";
+
+    var num=document.createElement("input");
+    num.className="num-input";
+    num.value=p.num;
+    num.oninput=function(e){
+      p.num=e.target.value;
+      rebuildRaw(side);
+      renderGame();
+      saveState();
+    };
+
+    var name=document.createElement("input");
+    name.className="name-input";
+    name.value=p.name;
+    name.oninput=function(e){
+      p.name=e.target.value;
+      rebuildRaw(side);
+      renderGame();
+      saveState();
+    };
+
+    inline.appendChild(num);
+    inline.appendChild(name);
+    row.appendChild(inline);
 
     var c=document.createElement("div");
     c.className="controls";
@@ -200,6 +246,7 @@ function renderSide(side){
         state[side].lineup[i]=tmp;
         if(state[side].selected===i) state[side].selected=i-1;
         else if(state[side].selected===i-1) state[side].selected=i;
+        rebuildRaw(side);
         render();
       }
     };
@@ -215,6 +262,7 @@ function renderSide(side){
         state[side].lineup[i]=tmp;
         if(state[side].selected===i) state[side].selected=i+1;
         else if(state[side].selected===i+1) state[side].selected=i;
+        rebuildRaw(side);
         render();
       }
     };
@@ -226,6 +274,7 @@ function renderSide(side){
       e.stopPropagation();
       state[side].bench.push(state[side].lineup.splice(i,1)[0]);
       if(state[side].selected===i) state[side].selected=null;
+      rebuildRaw(side);
       render();
     };
 
@@ -233,21 +282,47 @@ function renderSide(side){
     c.appendChild(down);
     c.appendChild(benchBtn);
     row.appendChild(c);
-    row.onclick=function(){
-      state[side].selected=i;
-      render();
+    row.onclick=function(ev){
+      if(ev.target.tagName !== "INPUT"){
+        state[side].selected=i;
+        render();
+      }
     };
     lineup.appendChild(row);
   });
 
-  if(state[side].lineup.length===0){
-    lineup.innerHTML="<div class='muted'>No lineup players.</div>";
-  }
+  if(state[side].lineup.length===0){ lineup.innerHTML="<div class='muted'>No lineup players.</div>"; }
 
   state[side].bench.forEach(function(p,i){
     var row=document.createElement("div");
     row.className="player";
-    row.innerHTML="<span>"+p.num+" "+p.name+"</span>";
+
+    var inline=document.createElement("div");
+    inline.className="inline-row inline-name";
+
+    var num=document.createElement("input");
+    num.className="num-input";
+    num.value=p.num;
+    num.oninput=function(e){
+      p.num=e.target.value;
+      rebuildRaw(side);
+      renderGame();
+      saveState();
+    };
+
+    var name=document.createElement("input");
+    name.className="name-input";
+    name.value=p.name;
+    name.oninput=function(e){
+      p.name=e.target.value;
+      rebuildRaw(side);
+      renderGame();
+      saveState();
+    };
+
+    inline.appendChild(num);
+    inline.appendChild(name);
+    row.appendChild(inline);
 
     var c=document.createElement("div");
     var play=document.createElement("button");
@@ -255,6 +330,7 @@ function renderSide(side){
     play.textContent="Play";
     play.onclick=function(){
       state[side].lineup.push(state[side].bench.splice(i,1)[0]);
+      rebuildRaw(side);
       render();
     };
     c.appendChild(play);
@@ -262,9 +338,61 @@ function renderSide(side){
     bench.appendChild(row);
   });
 
-  if(state[side].bench.length===0){
-    bench.innerHTML="<div class='muted'>No bench players.</div>";
+  if(state[side].bench.length===0){ bench.innerHTML="<div class='muted'>No bench players.</div>"; }
+}
+
+function renderSubPanel(side){
+  var panel = document.getElementById("sub" + (side === "left" ? "Left" : "Right") + "Panel");
+  panel.innerHTML = "";
+  if(!state[side].subOpen) return;
+  if(state[side].selected === null || !state[side].lineup[state[side].selected]){
+    panel.innerHTML = "<div class='sub-panel'><div class='muted'>Select a highlighted lineup player first.</div></div>";
+    return;
   }
+  if(state[side].bench.length === 0){
+    panel.innerHTML = "<div class='sub-panel'><div class='muted'>No bench players available.</div></div>";
+    return;
+  }
+  var wrap = document.createElement("div");
+  wrap.className = "sub-panel";
+  var prompt = document.createElement("div");
+  prompt.innerHTML = "Choose a bench player to swap with <strong>" + textOf(state[side].lineup[state[side].selected]) + "</strong>.";
+  wrap.appendChild(prompt);
+
+  state[side].bench.forEach(function(p, benchIndex){
+    var option = document.createElement("div");
+    option.className = "sub-option";
+
+    var label = document.createElement("div");
+    label.textContent = textOf(p);
+    option.appendChild(label);
+
+    var btn = document.createElement("button");
+    btn.className = "small";
+    btn.textContent = "Swap";
+    btn.onclick = function(){
+      var lineIndex = state[side].selected;
+      var lineupPlayer = state[side].lineup[lineIndex];
+      state[side].lineup[lineIndex] = state[side].bench[benchIndex];
+      state[side].bench[benchIndex] = lineupPlayer;
+      state[side].subOpen = false;
+      rebuildRaw(side);
+      render();
+    };
+    option.appendChild(btn);
+    wrap.appendChild(option);
+  });
+
+  var cancel = document.createElement("button");
+  cancel.className = "small";
+  cancel.style.marginTop = "10px";
+  cancel.textContent = "Cancel";
+  cancel.onclick = function(){
+    state[side].subOpen = false;
+    render();
+  };
+  wrap.appendChild(cancel);
+  panel.appendChild(wrap);
 }
 
 function renderGame(){
@@ -297,24 +425,27 @@ function renderGame(){
   state.left.bench.forEach(function(p){
     var chip=document.createElement("div");
     chip.className="chip";
-    chip.textContent=p.num+" "+p.name;
+    chip.textContent=textOf(p);
     bl.appendChild(chip);
   });
 
   state.right.bench.forEach(function(p){
     var chip=document.createElement("div");
     chip.className="chip";
-    chip.textContent=p.num+" "+p.name;
+    chip.textContent=textOf(p);
     br.appendChild(chip);
   });
 
   if(state.left.bench.length===0){ bl.innerHTML="<div class='muted'>No bench players.</div>"; }
   if(state.right.bench.length===0){ br.innerHTML="<div class='muted'>No bench players.</div>"; }
+
+  renderSubPanel("left");
+  renderSubPanel("right");
 }
 
 function render(){
-  state.left.name=document.getElementById("leftName").value.trim() || "Left Team";
-  state.right.name=document.getElementById("rightName").value.trim() || "Right Team";
+  state.left.name=document.getElementById("leftName").value.trim() || "Home Team";
+  state.right.name=document.getElementById("rightName").value.trim() || "Guest Team";
   state.left.raw=document.getElementById("leftText").value;
   state.right.raw=document.getElementById("rightText").value;
   renderSide("left");
@@ -328,7 +459,8 @@ function loadSide(side){
   state[side].lineup=parse(text);
   state[side].bench=[];
   state[side].selected=null;
-  state[side].name=document.getElementById(side+"Name").value.trim() || (side==="left"?"Left Team":"Right Team");
+  state[side].subOpen=false;
+  state[side].name=document.getElementById(side+"Name").value.trim() || (side==="left"?"Home Team":"Guest Team");
   state[side].raw=text;
   render();
 }
@@ -341,12 +473,15 @@ document.getElementById("leftText").addEventListener("input",saveState);
 document.getElementById("rightText").addEventListener("input",saveState);
 document.getElementById("enterGameMode").onclick=function(){ document.body.classList.add("game"); };
 document.getElementById("exitGameMode").onclick=function(){ document.body.classList.remove("game"); };
-document.getElementById("resetSavedData").onclick=function(){
-  localStorage.removeItem(STORAGE_KEY);
-  state = defaultState();
-  state.left.lineup = parse(state.left.raw);
-  state.right.lineup = parse(state.right.raw);
-  applyStateToInputs();
+
+document.getElementById("subLeftBtn").onclick=function(){
+  state.left.subOpen = !state.left.subOpen;
+  state.right.subOpen = false;
+  render();
+};
+document.getElementById("subRightBtn").onclick=function(){
+  state.right.subOpen = !state.right.subOpen;
+  state.left.subOpen = false;
   render();
 };
 
@@ -356,6 +491,10 @@ if(loadSavedState()){
   state.right.lineup = Array.isArray(state.right.lineup) ? state.right.lineup : parse(state.right.raw || "");
   state.left.bench = Array.isArray(state.left.bench) ? state.left.bench : [];
   state.right.bench = Array.isArray(state.right.bench) ? state.right.bench : [];
+  state.left.selected = (typeof state.left.selected === "number") ? state.left.selected : null;
+  state.right.selected = (typeof state.right.selected === "number") ? state.right.selected : null;
+  state.left.subOpen = false;
+  state.right.subOpen = false;
   render();
 }else{
   state.left.lineup = parse(state.left.raw);
