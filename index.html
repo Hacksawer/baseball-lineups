@@ -29,6 +29,7 @@ button{font:inherit;padding:8px 12px;border:1px solid #cbd5e1;background:#f3f4f6
 .name-input,.num-input{font:inherit;border:1px solid #ccd4de;border-radius:8px;padding:6px 8px;background:#fff}
 .num-input{width:60px}
 .name-input{flex:1;min-width:0}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .game-mode{display:none}
 body.game .editor-mode{display:none}
 body.game .game-mode{display:block}
@@ -45,7 +46,7 @@ body.game .game-mode{display:block}
 .game-player .num{display:inline-block;min-width:44px;color:var(--muted);font-weight:700}
 .game-player .name{font-size:22px;font-weight:700}
 .game-bench{margin-top:16px;background:var(--bench);border-radius:14px;padding:12px}
-.game-bench-list{display:flex;flex-wrap:wrap;gap:8px}
+.game-bench-list{display:flex;flex-direction:column;gap:8px}
 .chip{background:#fff;border:1px solid #d7c98f;border-radius:999px;padding:8px 12px;font-size:15px}
 .sub-panel{margin-top:12px;background:var(--sub);border:1px solid var(--sub-line);border-radius:12px;padding:10px}
 .sub-option{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff;border:1px solid #cde8d1;border-radius:10px;padding:8px 10px;margin-top:8px}
@@ -57,7 +58,7 @@ body.game .game-mode{display:block}
 <div class="editor-mode">
 <h1>Baseball Lineup Tool</h1>
 <p class="muted">Edit team names, rosters, player names, and lineups, then switch to Game Mode.</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+<div class="top-actions">
   <button id="enterGameMode">Game Mode</button>
 </div>
 
@@ -71,7 +72,10 @@ body.game .game-mode{display:block}
 14 Diaz
 27 Foster
 31 Green</textarea>
-    <button id="rightLoad">Load</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button id="rightLoad">Load</button>
+      <button id="rightAdd">Add</button>
+    </div>
 
     <div class="section">
       <h3>Lineup</h3>
@@ -93,7 +97,10 @@ body.game .game-mode{display:block}
 22 Lopez
 4 Johnson
 17 Perez</textarea>
-    <button id="leftLoad">Load</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button id="leftLoad">Load</button>
+      <button id="leftAdd">Add</button>
+    </div>
 
     <div class="section">
       <h3>Lineup</h3>
@@ -145,7 +152,7 @@ body.game .game-mode{display:block}
 
 <script>
 (function(){
-const STORAGE_KEY = "baseball_lineup_game_mode_v6_state";
+const STORAGE_KEY = "baseball_lineup_game_mode_v7_state";
 
 function parse(text){
   return text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean).map(function(line){
@@ -153,16 +160,17 @@ function parse(text){
     return {num:p[0] || "",name:p.slice(1).join(" ") || ""};
   });
 }
-
-function textOf(p){ return (p.num + " " + p.name).trim(); }
-
+function textOf(p){ return ((p.num || "") + " " + (p.name || "")).trim(); }
+function numValue(p){
+  var n = parseInt(p.num, 10);
+  return isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+}
 function defaultState(){
   return {
     left:{name:"Home Team",raw:"12 Smith\n8 Martinez\n22 Lopez\n4 Johnson\n17 Perez",lineup:[],bench:[],selected:null,subOpen:false},
     right:{name:"Guest Team",raw:"3 Allen\n9 Carter\n14 Diaz\n27 Foster\n31 Green",lineup:[],bench:[],selected:null,subOpen:false}
   };
 }
-
 let state = defaultState();
 
 function saveState(){
@@ -172,7 +180,6 @@ function saveState(){
   state.right.raw = document.getElementById("rightText").value;
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
 }
-
 function loadSavedState(){
   try{
     var raw = localStorage.getItem(STORAGE_KEY);
@@ -182,12 +189,10 @@ function loadSavedState(){
   }catch(e){}
   return false;
 }
-
 function rebuildRaw(side){
   state[side].raw = state[side].lineup.concat(state[side].bench).map(textOf).join("\n");
   document.getElementById(side + "Text").value = state[side].raw;
 }
-
 function applyStateToInputs(){
   document.getElementById("leftName").value = state.left.name || "Home Team";
   document.getElementById("rightName").value = state.right.name || "Guest Team";
@@ -359,12 +364,18 @@ function renderSubPanel(side){
   prompt.innerHTML = "Choose a bench player to swap with <strong>" + textOf(state[side].lineup[state[side].selected]) + "</strong>.";
   wrap.appendChild(prompt);
 
-  state[side].bench.forEach(function(p, benchIndex){
+  var sortedBench = state[side].bench.map(function(p, idx){ return {player:p, index:idx}; })
+    .sort(function(a,b){
+      var av = numValue(a.player), bv = numValue(b.player);
+      if(av !== bv) return av - bv;
+      return textOf(a.player).localeCompare(textOf(b.player));
+    });
+
+  sortedBench.forEach(function(item){
     var option = document.createElement("div");
     option.className = "sub-option";
-
     var label = document.createElement("div");
-    label.textContent = textOf(p);
+    label.textContent = textOf(item.player);
     option.appendChild(label);
 
     var btn = document.createElement("button");
@@ -373,8 +384,8 @@ function renderSubPanel(side){
     btn.onclick = function(){
       var lineIndex = state[side].selected;
       var lineupPlayer = state[side].lineup[lineIndex];
-      state[side].lineup[lineIndex] = state[side].bench[benchIndex];
-      state[side].bench[benchIndex] = lineupPlayer;
+      state[side].lineup[lineIndex] = state[side].bench[item.index];
+      state[side].bench[item.index] = lineupPlayer;
       state[side].subOpen = false;
       rebuildRaw(side);
       render();
@@ -403,7 +414,6 @@ function renderGame(){
   var gr=document.getElementById("gameRightLineup");
   var bl=document.getElementById("gameLeftBench");
   var br=document.getElementById("gameRightBench");
-
   gl.innerHTML=""; gr.innerHTML=""; bl.innerHTML=""; br.innerHTML="";
 
   state.left.lineup.forEach(function(p,i){
@@ -422,14 +432,24 @@ function renderGame(){
     gr.appendChild(btn);
   });
 
-  state.left.bench.forEach(function(p){
+  var leftBenchSorted = state.left.bench.slice().sort(function(a,b){
+    var av = numValue(a), bv = numValue(b);
+    if(av !== bv) return av - bv;
+    return textOf(a).localeCompare(textOf(b));
+  });
+  leftBenchSorted.forEach(function(p){
     var chip=document.createElement("div");
     chip.className="chip";
     chip.textContent=textOf(p);
     bl.appendChild(chip);
   });
 
-  state.right.bench.forEach(function(p){
+  var rightBenchSorted = state.right.bench.slice().sort(function(a,b){
+    var av = numValue(a), bv = numValue(b);
+    if(av !== bv) return av - bv;
+    return textOf(a).localeCompare(textOf(b));
+  });
+  rightBenchSorted.forEach(function(p){
     var chip=document.createElement("div");
     chip.className="chip";
     chip.textContent=textOf(p);
@@ -455,6 +475,8 @@ function render(){
 }
 
 function loadSide(side){
+  var ok = window.confirm("Load will replace the current player list for this team. Continue?");
+  if(!ok) return;
   var text=document.getElementById(side+"Text").value;
   state[side].lineup=parse(text);
   state[side].bench=[];
@@ -465,15 +487,23 @@ function loadSide(side){
   render();
 }
 
+function addBlankPlayer(side){
+  state[side].lineup.push({num:"", name:""});
+  rebuildRaw(side);
+  state[side].selected = state[side].lineup.length - 1;
+  render();
+}
+
 document.getElementById("leftLoad").onclick=function(){ loadSide("left"); };
 document.getElementById("rightLoad").onclick=function(){ loadSide("right"); };
+document.getElementById("leftAdd").onclick=function(){ addBlankPlayer("left"); };
+document.getElementById("rightAdd").onclick=function(){ addBlankPlayer("right"); };
 document.getElementById("leftName").addEventListener("input",render);
 document.getElementById("rightName").addEventListener("input",render);
 document.getElementById("leftText").addEventListener("input",saveState);
 document.getElementById("rightText").addEventListener("input",saveState);
 document.getElementById("enterGameMode").onclick=function(){ document.body.classList.add("game"); };
 document.getElementById("exitGameMode").onclick=function(){ document.body.classList.remove("game"); };
-
 document.getElementById("subLeftBtn").onclick=function(){
   state.left.subOpen = !state.left.subOpen;
   state.right.subOpen = false;
