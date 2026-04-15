@@ -117,8 +117,12 @@ body.game .game-mode{display:block}
 
 <script>
 (function(){
-const STORAGE_KEY="baseball_lineup_game_mode_v9_state";
+const STORAGE_KEY="baseball_lineup_game_mode_v10_state";
 const POSITIONS=["Pitch","Catch","1st","2nd","3rd","Short","Left","Center","Right","DH"];
+function displayPos(pos){
+  const map={"Pitch":"Pitcher","Catch":"Catcher","1st":"1st Baseman","2nd":"2nd Baseman","3rd":"3rd Baseman","Short":"Shortstop","Left":"Left Fielder","Center":"Center Fielder","Right":"Right Fielder","DH":"DH"};
+  return map[pos]||pos||"";
+}
 function makePlayer(num,name,pos){return {num:num||"",name:name||"",pos:pos||""};}
 function parse(text){return text.split(/\n/).map(l=>l.trim()).filter(Boolean).map(line=>{const p=line.split(" ");return makePlayer(p[0]||"",p.slice(1).join(" ")||"","");});}
 function textOf(p){return ((p.num||"")+" "+(p.name||"")).trim();}
@@ -136,7 +140,7 @@ function saveState(){
 }
 function loadSavedState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw) return false;const saved=JSON.parse(raw);if(saved&&saved.left&&saved.right){state=saved;return true;}}catch(e){}return false;}
 function rebuildRaw(side){state[side].raw=state[side].lineup.concat(state[side].bench).map(textOf).join("\n");document.getElementById(side+"Text").value=state[side].raw;}
-function applyStateToInputs(){document.getElementById("leftName").value=state.left.name||"Home Team";document.getElementById("rightName").value=state.right.name||"GuestTeam";document.getElementById("leftText").value=state.left.raw||"";document.getElementById("rightText").value=state.right.raw||"";}
+function applyStateToInputs(){document.getElementById("leftName").value=state.left.name||"Home Team";document.getElementById("rightName").value=state.right.name||"Guest Team";document.getElementById("leftText").value=state.left.raw||"";document.getElementById("rightText").value=state.right.raw||"";}
 function positionSelect(player){
   const pos=document.createElement("select");pos.className="pos-select";
   const blank=document.createElement("option");blank.value="";blank.textContent="Pos";pos.appendChild(blank);
@@ -191,8 +195,8 @@ function renderGame(){
   document.getElementById("gameRightTitle").textContent=state.right.name;
   const gl=document.getElementById("gameLeftLineup"), gr=document.getElementById("gameRightLineup"), bl=document.getElementById("gameLeftBench"), br=document.getElementById("gameRightBench");
   gl.innerHTML=""; gr.innerHTML=""; bl.innerHTML=""; br.innerHTML="";
-  state.left.lineup.forEach((p,i)=>{const btn=document.createElement("button"); btn.className="game-player"+(state.left.selected===i?" selected":""); btn.innerHTML="<span class='num'>"+(p.num||"")+"</span><span class='name'>"+(p.name||"")+"</span>"+(p.pos?"<span class='pos'>"+p.pos+"</span>":""); btn.onclick=()=>{state.left.selected=i; render();}; gl.appendChild(btn);});
-  state.right.lineup.forEach((p,i)=>{const btn=document.createElement("button"); btn.className="game-player"+(state.right.selected===i?" selected":""); btn.innerHTML="<span class='num'>"+(p.num||"")+"</span><span class='name'>"+(p.name||"")+"</span>"+(p.pos?"<span class='pos'>"+p.pos+"</span>":""); btn.onclick=()=>{state.right.selected=i; render();}; gr.appendChild(btn);});
+  state.left.lineup.forEach((p,i)=>{const btn=document.createElement("button"); btn.className="game-player"+(state.left.selected===i?" selected":""); btn.innerHTML="<span class='num'>"+(p.num||"")+"</span><span class='name'>"+(p.name||"")+"</span>"+(p.pos?"<span class='pos'>"+displayPos(p.pos)+"</span>":""); btn.onclick=()=>{state.left.selected=i; render();}; gl.appendChild(btn);});
+  state.right.lineup.forEach((p,i)=>{const btn=document.createElement("button"); btn.className="game-player"+(state.right.selected===i?" selected":""); btn.innerHTML="<span class='num'>"+(p.num||"")+"</span><span class='name'>"+(p.name||"")+"</span>"+(p.pos?"<span class='pos'>"+displayPos(p.pos)+"</span>":""); btn.onclick=()=>{state.right.selected=i; render();}; gr.appendChild(btn);});
   state.left.bench.slice().sort((a,b)=>{const av=numValue(a),bv=numValue(b); if(av!==bv) return av-bv; return textOf(a).localeCompare(textOf(b));}).forEach(p=>{const chip=document.createElement("div"); chip.className="chip"; chip.textContent=textOf(p); bl.appendChild(chip);});
   state.right.bench.slice().sort((a,b)=>{const av=numValue(a),bv=numValue(b); if(av!==bv) return av-bv; return textOf(a).localeCompare(textOf(b));}).forEach(p=>{const chip=document.createElement("div"); chip.className="chip"; chip.textContent=textOf(p); br.appendChild(chip);});
   if(state.left.bench.length===0) bl.innerHTML="<div class='muted'>No bench players.</div>";
